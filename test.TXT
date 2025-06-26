@@ -1,16 +1,15 @@
 import logging
 import asyncio
-import requests  # Библиотека для HTTP-запросов
 from datetime import time
 from pytz import timezone  # Для работы с локальным временем
 from telegram.ext import ApplicationBuilder, CommandHandler, JobQueue, ContextTypes
 from telegram import Update
 
-# --- Настройки ---
-TOKEN = '8156209960:AAFWJiIWfBDHPpo6PVqCtDAemyFK4fAHLX8'  # Твой токен бота
-CHANNEL_ID = '-1002147493493'  # ID канала или группы
+# Настройки
+TOKEN = '8156209960:AAFWJiIWfBDHPpo6PVqCtDAemyFK4fAHLX8'  # Токен твоего бота
+CHANNEL_ID = '-4867904183'  # ID канала или группы
 
-# --- Включаем логирование ---
+# Включаем логирование
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
@@ -21,16 +20,15 @@ logging.basicConfig(
 # Погода через open-meteo.com
 async def get_weather(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
-        await update.message.reply_text("❌ Используйте: /погода <название города>")
+        await update.message.reply_text("❌ Используйте: /weather <название города>")
         return
 
     city = " ".join(context.args)
 
+    # Получаем координаты города
+    geocode_url = f"https://nominatim.openstreetmap.org/search?q={city}&format=json&limit=1"
     try:
-        # Получаем координаты города
-        geocode_url = f"https://nominatim.openstreetmap.org/search?q={city}&format=json&limit=1"
         geocode_response = requests.get(geocode_url, headers={"User-Agent": "TelegramBot"})
-
         if not geocode_response.ok or len(geocode_response.json()) == 0:
             await update.message.reply_text("🏙 Город не найден.")
             return
@@ -50,7 +48,7 @@ async def get_weather(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"🌡 Температура: {current['temperature']}°C\n"
             f"🌬 Скорость ветра: {current['windspeed']} м/с\n"
             f"🧭 Направление ветра: {current['winddirection']}°\n"
-            f"☁ Код погоды: {current['weathercode']}"
+            f"☁ Погодные условия: {current['weathercode']}"
         )
 
         await update.message.reply_text(weather_info)
@@ -95,7 +93,6 @@ async def main():
 
         # Регистрируем команды
         application.add_handler(CommandHandler("send", test_send))
-        application.add_handler(CommandHandler("weather", get_weather))  # ⚠️ Регистрация команды /weather
 
         # Назначаем задачи
         schedule_jobs(application.job_queue)
